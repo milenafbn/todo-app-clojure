@@ -1,0 +1,18 @@
+{:paths ["src" "resources"] ;; 1. Onde nosso código-fonte vai ficar
+
+ :deps ;; 2. Nossa "lista de compras" de bibliotecas
+ {;; O próprio Clojure
+  org.clojure/clojure {:mvn/version "1.11.1"}
+
+  ;; --- Dependências do Backend (API REST) ---
+  ;; O "motor" do servidor web (Jetty) e as bibliotecas base do Ring
+  ring/ring-core          {:mvn/version "1.12.2"}
+  ring/ring-jetty-adapter {:mvn/version "1.12.2"}
+
+  ;; A biblioteca de roteamento (para definir as URLs)
+  metosin/reitit-ring     {:mvn/version "0.7.0"}}
+
+ :aliases ;; 3. Nossos "atalhos" de comando
+ {;; O alias que usaremos para iniciar o servidor
+  :run
+  {:main-opts ["-m" "todo.backend.core"]}}}

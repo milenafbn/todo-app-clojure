@@ -1,22 +1,49 @@
 (ns todo.backend.core
   (:require [ring.adapter.jetty :as jetty]       ;; 1. O software do Servidor (Jetty)
             [reitit.ring :as ring]               ;; 2. O Roteador (Reitit)
+            ;; Middlewares (JSON e parâmetros de URL)
+            [ring.middleware.json :refer [wrap-json-response wrap-json-body]]
+            [ring.middleware.params :refer [wrap-params]]
+            [ring.middleware.keyword-params :refer [wrap-keyword-params]]
             [todo.backend.handler :as handler])  ;; 3. Nossas funções (handler.clj)
   (:gen-class))
 
 ;; --- 1. Definição das Rotas ---
-;; A URL "/api/hello", quando acessada com o método :get,
-;; deve executar nossa função handler/hello-handler.
+;; Todas as rotas ficam aninhadas sob o prefixo comum "/api".
 (def app-routes
   (ring/router
-   [["/api/hello" {:get {:handler handler/hello-handler}}]]))
+   ["/api"
+    ["/hello" {:get {:handler handler/hello-handler}}]
+
+    ["/todos"
+     {:get  {:handler handler/list-todos-handler}      ;; GET  chama 'list'
+      :post {:handler handler/create-todo-handler}}]])) ;; POST chama 'create'
 
 ;; --- 2. Definição da Aplicação (App) ---
 ;; O 'app' final é a função Ring principal.
 (def app
   (ring/ring-handler
    app-routes                     ;; Nossas rotas
-   (ring/create-default-handler))) ;; Um handler padrão para 404 (Not Found)
+   (ring/create-default-handler)  ;; Um handler padrão para 404 (Not Found)
+
+   ;; --- A "Linha de Montagem" de Middlewares ---
+   ;; A requisição percorre o vetor DE CIMA PARA BAIXO até chegar
+   ;; ao handler; a resposta volta DE BAIXO PARA CIMA.
+   {:middleware [;; 1. Converte a *resposta* (nosso mapa) em JSON
+                 wrap-json-response
+
+                 ;; 2. Converte o *corpo* da requisição (JSON)
+                 ;;    em um mapa Clojure e o coloca em :body
+                 [wrap-json-body {:keywords? true}]
+
+                 ;; 3. Lê parâmetros de URL (ex: /user?id=1)
+                 ;;    e os coloca em :query-params (chaves string)
+                 wrap-params
+
+                 ;; 4. Converte as chaves-string dos parâmetros
+                 ;;    em keywords ("id" -> :id).
+                 ;;    Precisa vir DEPOIS do wrap-params!
+                 wrap-keyword-params]}))
 
 ;; --- 3. Função para Iniciar o Servidor ---
 (defn start-server [port]

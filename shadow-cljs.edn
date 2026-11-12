@@ -1,0 +1,26 @@
+{:deps true ;; 1. Informa ao shadow-cljs para usar o deps.edn
+
+ :builds
+ {:app ;; Damos ao nosso "build" (processo) o nome de ":app"
+  {;; :browser = o destino do nosso código é um navegador web
+   :target :browser
+
+   ;; Onde o JavaScript compilado deve ser salvo
+   :output-dir "resources/public/js"
+
+   ;; O caminho que o navegador usará para acessar esses arquivos
+   :asset-path "/js"
+
+   ;; O "ponto de entrada" do nosso código.
+   ;; Diz ao shadow-cljs para compilar o namespace 'todo.frontend.core'
+   ;; e, quando a página carregar, chamar a função 'init'.
+   :modules {:main {:init-fn todo.frontend.core/init}}
+
+   ;; Configurações do servidor de desenvolvimento
+   :devtools
+   {;; O servidor serve os arquivos estáticos (como o index.html)
+    ;; desta pasta:
+    :http-root "resources/public"
+
+    ;; O servidor roda na porta 8000 (diferente da API, na 3000)
+    :http-port 8000}}}}

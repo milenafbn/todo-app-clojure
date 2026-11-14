@@ -5,6 +5,7 @@
             [ring.middleware.json :refer [wrap-json-response wrap-json-body]]
             [ring.middleware.params :refer [wrap-params]]
             [ring.middleware.keyword-params :refer [wrap-keyword-params]]
+            [ring.middleware.cors :refer [wrap-cors]]
             [todo.backend.handler :as handler])  ;; 3. Nossas funções (handler.clj)
   (:gen-class))
 
@@ -29,18 +30,30 @@
    ;; --- A "Linha de Montagem" de Middlewares ---
    ;; A requisição percorre o vetor DE CIMA PARA BAIXO até chegar
    ;; ao handler; a resposta volta DE BAIXO PARA CIMA.
-   {:middleware [;; 1. Converte a *resposta* (nosso mapa) em JSON
+   {:middleware [;; 1. CORS: precisa ser o PRIMEIRO (o mais "externo"),
+                 ;;    para responder ao preflight OPTIONS antes de o
+                 ;;    roteador procurar (e não achar) uma rota.
+                 [wrap-cors
+                  ;; Em quais origens o backend confia:
+                  :access-control-allow-origin [#"http://localhost:8000"]
+                  ;; Quais métodos HTTP são permitidos:
+                  :access-control-allow-methods [:get :post :put :delete]
+                  ;; Quais headers o frontend pode enviar:
+                  ;; (necessário para o POST com Content-Type: application/json)
+                  :access-control-allow-headers ["Content-Type"]]
+
+                 ;; 2. Converte a *resposta* (nosso mapa) em JSON
                  wrap-json-response
 
-                 ;; 2. Converte o *corpo* da requisição (JSON)
+                 ;; 3. Converte o *corpo* da requisição (JSON)
                  ;;    em um mapa Clojure e o coloca em :body
                  [wrap-json-body {:keywords? true}]
 
-                 ;; 3. Lê parâmetros de URL (ex: /user?id=1)
+                 ;; 4. Lê parâmetros de URL (ex: /user?id=1)
                  ;;    e os coloca em :query-params (chaves string)
                  wrap-params
 
-                 ;; 4. Converte as chaves-string dos parâmetros
+                 ;; 5. Converte as chaves-string dos parâmetros
                  ;;    em keywords ("id" -> :id).
                  ;;    Precisa vir DEPOIS do wrap-params!
                  wrap-keyword-params]}))

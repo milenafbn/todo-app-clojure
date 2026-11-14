@@ -12,12 +12,15 @@
   ring/ring-json          {:mvn/version "0.5.1"}
   ;; A biblioteca de roteamento (para definir as URLs)
   metosin/reitit-ring     {:mvn/version "0.7.0"}
+  ;; Middleware que libera o acesso do frontend (outra origem) à API
+  ring-cors/ring-cors     {:mvn/version "0.1.13"}
 
   ;; --- Dependências do Frontend ---
   ;; ADICIONE ESTAS DUAS LINHAS:
   ;; (a versão do shadow-cljs é a MESMA que instalamos via npm!)
   thheller/shadow-cljs    {:mvn/version "2.28.23"}
-  reagent/reagent         {:mvn/version "2.0.0"}}
+  reagent/reagent         {:mvn/version "2.0.0"}
+  org.clojure/core.async  {:mvn/version "1.6.681"}}
 
  :aliases ;; 3. Nossos "atalhos" de comando
  {;; O alias que usaremos para iniciar o servidor

@@ -114,7 +114,9 @@
 
       ;; 6. O botão de deletar
       [:button.delete-btn
-       {:on-click #(delete-todo (:todos/id todo))}
+       ;; Pede confirmação antes de apagar
+       {:on-click #(when (js/confirm "Remover esta tarefa?")
+                     (delete-todo (:todos/id todo)))}
        "X"]])])
 
 ;; O App Principal (que monta tudo)

@@ -1,41 +1,49 @@
 (ns todo.backend.db
-  "Este namespace gerencia os dados dos 'todos' em memória.")
+  "Este namespace gerencia os dados dos 'todos'
+   usando um banco de dados persistente SQLite."
+  (:require [next.jdbc :as jdbc]))
 
-;; (def) cria uma 'var' global.
-;; (atom {}) cria nossa "caixa" (atom) e coloca
-;; um mapa imutável vazio {} dentro dela.
-(def todos-db (atom {}))
-;; Nosso banco terá a forma: {1 {:id 1, :title "..."}, 2 {:id 2, ...}}
+;; --- 1. A Configuração (Especificação do Banco) ---
+;; O banco será salvo em um arquivo chamado "prod.db",
+;; criado automaticamente na raiz do projeto.
+(def db-spec {:dbtype "sqlite"
+              :dbname "prod.db"})
 
-;; Uma "caixa" separada para o contador de IDs.
-;; Começa em 0: cada novo todo recebe o valor já incrementado (1, 2, 3...).
-(def next-id (atom 0))
+;; --- 2. Função de Inicialização ---
+;; Cria a tabela "todos" se ela ainda não existir.
+;; Vamos chamá-la no 'core.clj' quando o servidor iniciar.
+(defn initialize-database!
+  "Cria a tabela 'todos' no banco de dados se ela não existir."
+  []
+  (jdbc/execute! db-spec ["
+    CREATE TABLE IF NOT EXISTS todos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT,
+      description TEXT,
+      completed BOOLEAN DEFAULT 0,
+      created_at TEXT
+    )
+  "]))
 
-;; --- Nossas Funções de Acesso ao Banco ---
+;; --- 3. As Novas Funções (substituindo os 'atoms') ---
 
 (defn get-all-todos
   "Retorna uma lista com todos os 'todos' no banco."
   []
-  ;; @todos-db: "olha dentro" da caixa (lê o valor).
-  ;; (vals): pega apenas os valores do mapa (ignora as chaves/IDs).
-  (vec (vals @todos-db)))
+  ;; O 'execute!' roda o SQL e já retorna mapas Clojure!
+  (jdbc/execute! db-spec ["SELECT * FROM todos ORDER BY created_at DESC"]))
 
 (defn create-todo
   "Cria um novo 'todo', salva no banco e o retorna."
-  [todo-data] ;; ex: {:title "Minha tarefa"}
-  (let [;; 1. Gera o próximo ID: swap! incrementa a caixa e DEVOLVE
-        ;;    o novo valor, tudo em um único passo atômico.
-        id (swap! next-id inc)
-
-        ;; 2. Cria um NOVO mapa imutável com os dados completos
-        new-todo (assoc todo-data
-                        :id id
-                        :completed false
-                        :created-at (str (java.time.Instant/now)))]
-
-    ;; 3. (swap!): "troca" o conteúdo da caixa 'todos-db',
-    ;;    aplicando 'assoc' ao mapa antigo para criar um novo.
-    (swap! todos-db assoc id new-todo)
-
-    ;; 4. Retorna o 'todo' recém-criado.
-    new-todo))
+  [todo-data] ;; ex: {:title "Minha tarefa", :description "..."}
+  ;; A cláusula 'RETURNING *' pede ao SQLite para devolver
+  ;; a linha recém-inserida (com o id gerado, o completed, etc.).
+  ;; 'execute-one!' retorna esse único resultado como um mapa.
+  (jdbc/execute-one! db-spec ["
+    INSERT INTO todos (title, description, completed, created_at)
+    VALUES (?, ?, ?, ?)
+    RETURNING *"
+    (:title todo-data)
+    (:description todo-data)
+    0 ;; completed = falso (lembre-se: SQLite usa 0/1)
+    (str (java.time.Instant/now))]))

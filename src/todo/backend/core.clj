@@ -6,7 +6,8 @@
             [ring.middleware.params :refer [wrap-params]]
             [ring.middleware.keyword-params :refer [wrap-keyword-params]]
             [ring.middleware.cors :refer [wrap-cors]]
-            [todo.backend.handler :as handler])  ;; 3. Nossas funções (handler.clj)
+            [todo.backend.handler :as handler]  ;; 3. Nossas funções (handler.clj)
+            [todo.backend.db :as db])
   (:gen-class))
 
 ;; --- 1. Definição das Rotas ---
@@ -68,7 +69,8 @@
 ;; --- 4. Ponto de Entrada Principal (-main) ---
 ;; Esta é a função que o alias :run (do deps.edn) procura.
 (defn -main [& args]
-  ;; Permite passar a porta como argumento (ex: clj -M:run 8080)
-  ;; ou usa "3000" como padrão.
   (let [port (Integer/parseInt (or (first args) "3000"))]
+    ;; --- ADICIONE ESTA LINHA ---
+    (db/initialize-database!) ;; Garante que a tabela exista
+    ;; ---------------------------
     (start-server port)))

@@ -19,7 +19,14 @@
 
     ["/todos"
      {:get  {:handler handler/list-todos-handler}      ;; GET  chama 'list'
-      :post {:handler handler/create-todo-handler}}]])) ;; POST chama 'create'
+      :post {:handler handler/create-todo-handler}}] ;; POST chama 'create'
+
+    ["/todos/:id/toggle"
+     {:post {:handler handler/toggle-todo-handler}}]
+
+    ;; DELETE na URL "canônica" do recurso (convenção REST)
+    ["/todos/:id"
+     {:delete {:handler handler/delete-todo-handler}}]]))
 
 ;; --- 2. Definição da Aplicação (App) ---
 ;; O 'app' final é a função Ring principal.

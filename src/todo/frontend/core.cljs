@@ -49,6 +49,30 @@
       (catch js/Error e
         (swap! app-state assoc :error (.-message e) :loading false)))))
 
+(defn toggle-todo
+  "Chama a API para alternar o status de um todo."
+  [id]
+  (go
+    (try
+      (<p! (fetch-json (str api-url "/todos/" id "/toggle")
+                       {:method "POST"}))
+      ;; Se funcionou, recarrega a lista inteira
+      (get-todos)
+      (catch js/Error e
+        (swap! app-state assoc :error (.-message e) :loading false)))))
+
+(defn delete-todo
+  "Chama a API para remover um todo."
+  [id]
+  (go
+    (try
+      (<p! (fetch-json (str api-url "/todos/" id)
+                       {:method "DELETE"}))
+      ;; Se funcionou, recarrega a lista
+      (get-todos)
+      (catch js/Error e
+        (swap! app-state assoc :error (.-message e) :loading false)))))
+
 ;; --- 1. Nossos Componentes ---
 
 ;; O Formulário
@@ -73,9 +97,25 @@
 (defn todo-list []
   [:ul.todo-list
    (for [todo (:todos @app-state)]
-     ^{:key (:todos/id todo)}  
-     [:li.todo-item
-      (:todos/title todo)])]) 
+     ^{:key (:todos/id todo)}
+     ;; 1. Classe CSS 'completed' quando o status for 1
+     [:li.todo-item {:class (when (= 1 (:todos/completed todo)) "completed")}
+
+      ;; 2. O Checkbox
+      [:input.todo-checkbox
+       {:type "checkbox"
+        ;; 3. A CONVERSÃO: 0/1 (SQLite) -> booleano de verdade
+        :checked (not= 0 (:todos/completed todo))
+        ;; 4. O evento chama nossa função de API
+        :on-change #(toggle-todo (:todos/id todo))}]
+
+      ;; 5. O título (dentro de um span, para o CSS)
+      [:span.todo-title (:todos/title todo)]
+
+      ;; 6. O botão de deletar
+      [:button.delete-btn
+       {:on-click #(delete-todo (:todos/id todo))}
+       "X"]])])
 
 ;; O App Principal (que monta tudo)
 (defn app []

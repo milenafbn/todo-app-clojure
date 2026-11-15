@@ -47,3 +47,26 @@
     (:description todo-data)
     0 ;; completed = falso (lembre-se: SQLite usa 0/1)
     (str (java.time.Instant/now))]))
+
+(defn toggle-todo!
+  "Alterna o status 'completed' de um todo no banco."
+  [id]
+  ;; (1 - completed) é um truque SQL para inverter: 0 -> 1 e 1 -> 0
+  ;; RETURNING * devolve a linha já atualizada (ou nada, se o id não existir)
+  (jdbc/execute-one! db-spec ["
+    UPDATE todos
+    SET completed = (1 - completed)
+    WHERE id = ?
+    RETURNING *"
+    id]))
+
+(defn delete-todo!
+  "Remove um todo do banco. Retorna o todo removido, ou nil se não existir."
+  [id]
+  ;; RETURNING * aqui devolve a linha que acabou de ser apagada
+  ;; Serve para o handler saber se o id existia (nil = não existia)
+  (jdbc/execute-one! db-spec ["
+    DELETE FROM todos
+    WHERE id = ?
+    RETURNING *"
+    id]))

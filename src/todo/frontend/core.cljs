@@ -97,29 +97,38 @@
 
 ;; A Lista (recebe uma lista de "todos" como argumento)
 (defn todo-list []
-  [:ul.todo-list
-   (for [todo (:todos @app-state)]
-     ^{:key (:todos/id todo)}
-     ;; 1. Classe CSS 'completed' quando o status for 1
-     [:li.todo-item {:class (when (= 1 (:todos/completed todo)) "completed")}
+  (cond
+    ;; Com erro na API, a faixa vermelha já explica a lista vazia
+    (:error @app-state) nil
 
-      ;; 2. O Checkbox
-      [:input.todo-checkbox
-       {:type "checkbox"
-        ;; 3. A CONVERSÃO: 0/1 (SQLite) -> booleano de verdade
-        :checked (not= 0 (:todos/completed todo))
-        ;; 4. O evento chama nossa função de API
-        :on-change #(toggle-todo (:todos/id todo))}]
+    ;; Lista vazia: uma mensagem no lugar do <ul> vazio
+    (empty? (:todos @app-state))
+    [:p.empty-list "Nenhuma tarefa por aqui. Que tal adicionar a primeira?"]
 
-      ;; 5. O título (dentro de um span, para o CSS)
-      [:span.todo-title (:todos/title todo)]
+    :else
+    [:ul.todo-list
+     (for [todo (:todos @app-state)]
+       ^{:key (:todos/id todo)}
+       ;; 1. Classe CSS 'completed' quando o status for 1
+       [:li.todo-item {:class (when (= 1 (:todos/completed todo)) "completed")}
 
-      ;; 6. O botão de deletar
-      [:button.delete-btn
-       ;; Pede confirmação antes de apagar
-       {:on-click #(when (js/confirm "Remover esta tarefa?")
-                     (delete-todo (:todos/id todo)))}
-       "X"]])])
+        ;; 2. O Checkbox
+        [:input.todo-checkbox
+         {:type "checkbox"
+          ;; 3. A CONVERSÃO: 0/1 (SQLite) -> booleano de verdade
+          :checked (not= 0 (:todos/completed todo))
+          ;; 4. O evento chama nossa função de API
+          :on-change #(toggle-todo (:todos/id todo))}]
+
+        ;; 5. O título (dentro de um span, para o CSS)
+        [:span.todo-title (:todos/title todo)]
+
+        ;; 6. O botão de deletar
+        [:button.delete-btn
+         ;; Pede confirmação antes de apagar
+         {:on-click #(when (js/confirm "Tem certeza de que quer remover esta tarefa?")
+                       (delete-todo (:todos/id todo)))}
+         "X"]])]))
 
 ;; O Status da API: mostra o :loading e o :error que o app-state
 ;; já guarda desde a Fase 4 (extensão opcional do tutorial).
@@ -128,14 +137,14 @@
 (defn api-status []
   (let [{:keys [loading error]} @app-state]
     (cond
-      error   [:div.error "Não foi possível falar com a API. O backend (porta 3000) está rodando?"]
-      loading [:div.loading "Carregando..."])))
+      error   [:div.error "Não foi possível conectar ao servidor. Verifique se ele está ligado e recarregue a página."]
+      loading [:div.loading "Carregando suas tarefas..."])))
 
 ;; O App Principal (que monta tudo)
 (defn app []
   [:div.todo-app
-   [:h1 "Todo App"]
-   [:p "Conectado à API. Os dados sobrevivem ao F5!"]
+   [:h1 "Minhas Tarefas"]
+   [:p "Organize seu dia, uma tarefa de cada vez."]
 
    ;; Os componentes agora se viram sozinhos!
    [todo-form]

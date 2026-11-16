@@ -3,27 +3,49 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Todo App (CLJS)</title>
+    <title>Minhas Tarefas</title>
+    <!-- Fonte Poppins (Google Fonts); sem internet, cai na fonte do sistema -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <style>
+      /* Paleta: tons de índigo/violeta */
       body {
-        font-family: Arial, sans-serif;
-        background-color: #f5f5f5;
+        font-family: "Poppins", "Segoe UI", Arial, sans-serif;
+        margin: 0;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
         display: flex;
         justify-content: center;
-        padding: 50px 20px;
+        align-items: flex-start;
+        padding: 60px 20px;
+        box-sizing: border-box;
+        color: #1f2937;
       }
       .todo-app {
         width: 100%;
-        max-width: 600px;
-        background: white;
-        padding: 25px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        max-width: 560px;
+        background: #ffffff;
+        padding: 32px;
+        border-radius: 18px;
+        box-shadow: 0 20px 50px rgba(30, 27, 75, 0.25);
       }
       h1 {
-        color: #333;
+        margin: 0 0 4px;
         text-align: center;
-        margin-bottom: 25px;
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: #4338ca;
+      }
+      /* Subtítulo logo abaixo do título */
+      .todo-app > p {
+        margin: 0 0 24px;
+        text-align: center;
+        color: #6b7280;
+        font-size: 0.95rem;
       }
       .todo-input {
         display: flex;
@@ -32,74 +54,113 @@
       }
       .todo-input input[type="text"] {
         flex: 1;
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        font-size: 16px;
+        padding: 12px 16px;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        font-family: inherit;
+        font-size: 1rem;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+      .todo-input input[type="text"]:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
       }
       .todo-list {
         list-style: none;
         padding: 0;
+        margin: 0;
       }
       .todo-item {
         display: flex;
         align-items: center;
-        padding: 12px;
-        margin-bottom: 8px;
-        background-color: #f8f9fa;
-        border-radius: 4px;
-        transition: background-color 0.3s;
+        gap: 12px;
+        padding: 14px 16px;
+        margin-bottom: 10px;
+        background-color: #ffffff;
+        border: 1px solid #eef0f4;
+        border-radius: 12px;
+        transition: transform 0.15s, box-shadow 0.15s, background-color 0.2s;
+      }
+      /* Ao passar o mouse, o item "levanta" um pouco */
+      .todo-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(99, 102, 241, 0.15);
       }
       /* O título ocupa todo o espaço entre o checkbox e o botão X */
       .todo-title {
         flex: 1;
+        font-size: 1rem;
+        word-break: break-word;
+      }
+      .todo-checkbox {
+        width: 20px;
+        height: 20px;
+        margin: 0;
+        accent-color: #6366f1;
+        cursor: pointer;
       }
       /* O botão "Adicionar" */
       button {
-        padding: 10px 15px;
-        background-color: #007bff;
-        color: white;
+        padding: 12px 20px;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: #ffffff;
         border: none;
-        border-radius: 4px;
+        border-radius: 12px;
         cursor: pointer;
-        font-size: 16px;
-        transition: background-color 0.2s;
+        font-family: inherit;
+        font-size: 1rem;
+        font-weight: 600;
+        transition: filter 0.2s, transform 0.1s;
       }
       button:hover {
-        background-color: #0056b3;
+        filter: brightness(1.08);
       }
-      /* O botão de deletar (X) */
+      button:active {
+        transform: scale(0.97);
+      }
+      /* O botão de deletar (X): discreto, fica vermelho no hover */
       .delete-btn {
-        background-color: #dc3545;
-        font-size: 12px;
-        padding: 5px 10px;
+        background: transparent;
+        color: #9ca3af;
+        font-size: 0.85rem;
+        font-weight: 600;
+        padding: 6px 10px;
+        border-radius: 8px;
       }
       .delete-btn:hover {
-        background-color: #c82333;
+        background: #fee2e2;
+        color: #dc2626;
+        filter: none;
       }
-      /* Item concluído */
+      /* Item concluído: só o título fica riscado (não o botão X) */
       .completed {
-        opacity: 0.6;
-        background-color: #f1f1f1;
-        text-decoration: line-through;
+        background-color: #f9fafb;
       }
-      .todo-checkbox {
-        margin-right: 10px;
-        cursor: pointer;
+      .completed .todo-title {
+        text-decoration: line-through;
+        color: #9ca3af;
+      }
+      /* Mensagem de lista vazia */
+      .empty-list {
+        text-align: center;
+        color: #9ca3af;
+        padding: 28px 0;
+        margin: 0;
       }
       /* Status da API: carregando e erro */
       .loading {
-        color: #666;
+        color: #6b7280;
         font-style: italic;
         margin-bottom: 12px;
       }
       .error {
-        padding: 10px 12px;
-        margin-bottom: 12px;
-        background-color: #f8d7da;
-        color: #842029;
-        border: 1px solid #f5c2c7;
-        border-radius: 4px;
+        padding: 12px 14px;
+        margin-bottom: 14px;
+        background-color: #fef2f2;
+        color: #b91c1c;
+        border: 1px solid #fecaca;
+        border-radius: 12px;
       }
     </style>
   </head>

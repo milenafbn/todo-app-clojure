@@ -89,8 +89,10 @@
    [:button
     ;; (Ação): o on-click chama a API (POST) e limpa o input
     {:on-click (fn []
-                 (create-todo {:title (:input-text @app-state)})
-                 (swap! app-state assoc :input-text ""))} ;; Limpa o input
+                 ;; Não envia título vazio (evita o 400 do backend)
+                 (when-not (str/blank? (:input-text @app-state))
+                   (create-todo {:title (:input-text @app-state)})
+                   (swap! app-state assoc :input-text "")))} ;; Limpa o input
     "Adicionar"]])
 
 ;; A Lista (recebe uma lista de "todos" como argumento)
@@ -119,6 +121,16 @@
                      (delete-todo (:todos/id todo)))}
        "X"]])])
 
+;; O Status da API: mostra o :loading e o :error que o app-state
+;; já guarda desde a Fase 4 (extensão opcional do tutorial).
+;; Obs.: o <p! embrulha o erro original, então o :error sempre vem
+;; como "Promise error" -- por isso exibimos uma mensagem fixa.
+(defn api-status []
+  (let [{:keys [loading error]} @app-state]
+    (cond
+      error   [:div.error "Não foi possível falar com a API. O backend (porta 3000) está rodando?"]
+      loading [:div.loading "Carregando..."])))
+
 ;; O App Principal (que monta tudo)
 (defn app []
   [:div.todo-app
@@ -127,6 +139,7 @@
 
    ;; Os componentes agora se viram sozinhos!
    [todo-form]
+   [api-status]
    [todo-list]])
 
 ;; --- 2. A Inicialização ---

@@ -77,6 +77,14 @@
 
 ;; --- 1. Nossos Componentes ---
 
+;; (Ação): chama a API (POST) e limpa o input.
+;; Usada pelo botão "Adicionar" e pela tecla Enter.
+(defn adicionar-todo []
+  ;; Não envia título vazio (evita o 400 do backend)
+  (when-not (str/blank? (:input-text @app-state))
+    (create-todo {:title (:input-text @app-state)})
+    (swap! app-state assoc :input-text ""))) ;; Limpa o input
+
 ;; O Formulário
 (defn todo-form []
   [:div.todo-input
@@ -86,15 +94,13 @@
      ;; (Leitura): o valor do input vem do app-state
      :value (:input-text @app-state)
      ;; (Escrita): o on-change atualiza o app-state a cada tecla
-     :on-change #(swap! app-state assoc :input-text (-> % .-target .-value))}]
+     :on-change #(swap! app-state assoc :input-text (-> % .-target .-value))
+     ;; Enter no campo também adiciona
+     :on-key-down #(when (= "Enter" (.-key %))
+                     (adicionar-todo))}]
 
    [:button
-    ;; (Ação): o on-click chama a API (POST) e limpa o input
-    {:on-click (fn []
-                 ;; Não envia título vazio (evita o 400 do backend)
-                 (when-not (str/blank? (:input-text @app-state))
-                   (create-todo {:title (:input-text @app-state)})
-                   (swap! app-state assoc :input-text "")))} ;; Limpa o input
+    {:on-click adicionar-todo}
     "Adicionar"]])
 
 ;; Um todo está pendente quando o completed (0/1 do SQLite) é 0

@@ -7,7 +7,9 @@
 
 ;; --- O "Cérebro" Reativo ---
 (defonce app-state (r/atom {:input-text ""
-                            :todos []}))
+                            :todos []
+                            ;; Filtro da lista: :todas, :ativas ou :concluidas
+                            :filter :todas}))
 
 ;; --- A URL base da nossa API (o backend, porta 3000) ---
 (def api-url "http://localhost:3000/api")
@@ -95,40 +97,78 @@
                    (swap! app-state assoc :input-text "")))} ;; Limpa o input
     "Adicionar"]])
 
-;; A Lista (recebe uma lista de "todos" como argumento)
+;; Um todo está pendente quando o completed (0/1 do SQLite) é 0
+(defn pendente? [todo]
+  (= 0 (:todos/completed todo)))
+
+;; Aplica o filtro escolhido à lista de todos
+(defn filtrar-todos [filtro todos]
+  (case filtro
+    :ativas     (filter pendente? todos)
+    :concluidas (remove pendente? todos)
+    todos))
+
+;; A Lista (já filtrada pelo :filter do app-state)
 (defn todo-list []
-  (cond
-    ;; Com erro na API, a faixa vermelha já explica a lista vazia
-    (:error @app-state) nil
+  (let [{:keys [todos error] filtro :filter} @app-state
+        visiveis (filtrar-todos filtro todos)]
+    (cond
+      ;; Com erro na API, a faixa vermelha já explica a lista vazia
+      error nil
 
-    ;; Lista vazia: uma mensagem no lugar do <ul> vazio
-    (empty? (:todos @app-state))
-    [:p.empty-list "Nenhuma tarefa por aqui. Que tal adicionar a primeira?"]
+      ;; Lista vazia: uma mensagem no lugar do <ul> vazio
+      (empty? todos)
+      [:p.empty-list "Nenhuma tarefa por aqui. Que tal adicionar a primeira?"]
 
-    :else
-    [:ul.todo-list
-     (for [todo (:todos @app-state)]
-       ^{:key (:todos/id todo)}
-       ;; 1. Classe CSS 'completed' quando o status for 1
-       [:li.todo-item {:class (when (= 1 (:todos/completed todo)) "completed")}
+      ;; Há tarefas, mas nenhuma neste filtro
+      (empty? visiveis)
+      [:p.empty-list "Nenhuma tarefa neste filtro."]
 
-        ;; 2. O Checkbox
-        [:input.todo-checkbox
-         {:type "checkbox"
-          ;; 3. A CONVERSÃO: 0/1 (SQLite) -> booleano de verdade
-          :checked (not= 0 (:todos/completed todo))
-          ;; 4. O evento chama nossa função de API
-          :on-change #(toggle-todo (:todos/id todo))}]
+      :else
+      [:ul.todo-list
+       (for [todo visiveis]
+         ^{:key (:todos/id todo)}
+         ;; 1. Classe CSS 'completed' quando o status for 1
+         [:li.todo-item {:class (when (= 1 (:todos/completed todo)) "completed")}
 
-        ;; 5. O título (dentro de um span, para o CSS)
-        [:span.todo-title (:todos/title todo)]
+          ;; 2. O Checkbox
+          [:input.todo-checkbox
+           {:type "checkbox"
+            ;; 3. A CONVERSÃO: 0/1 (SQLite) -> booleano de verdade
+            :checked (not= 0 (:todos/completed todo))
+            ;; 4. O evento chama nossa função de API
+            :on-change #(toggle-todo (:todos/id todo))}]
 
-        ;; 6. O botão de deletar
-        [:button.delete-btn
-         ;; Pede confirmação antes de apagar
-         {:on-click #(when (js/confirm "Tem certeza de que quer remover esta tarefa?")
-                       (delete-todo (:todos/id todo)))}
-         "X"]])]))
+          ;; 5. O título (dentro de um span, para o CSS)
+          [:span.todo-title (:todos/title todo)]
+
+          ;; 6. O botão de deletar
+          [:button.delete-btn
+           ;; Pede confirmação antes de apagar
+           {:on-click #(when (js/confirm "Tem certeza de que quer remover esta tarefa?")
+                         (delete-todo (:todos/id todo)))}
+           "X"]])])))
+
+;; Os Filtros + o contador de pendentes (rodapé da lista)
+(defn todo-filters []
+  (let [{:keys [todos error] filtro :filter} @app-state
+        pendentes (count (filter pendente? todos))]
+    ;; Só aparece quando há tarefas e a API respondeu
+    (when (and (not error) (seq todos))
+      [:div.todo-footer
+       [:span.todo-count
+        (str pendentes (if (= 1 pendentes)
+                         " tarefa pendente"
+                         " tarefas pendentes"))]
+       [:div.filters
+        (for [[chave rotulo] [[:todas "Todas"]
+                              [:ativas "Ativas"]
+                              [:concluidas "Concluídas"]]]
+          ^{:key chave}
+          [:button.filter-btn
+           {:class (when (= filtro chave) "active")
+            :on-click #(swap! app-state assoc :filter chave)}
+           rotulo])]])))
 
 ;; O Status da API: mostra o :loading e o :error que o app-state
 ;; já guarda desde a Fase 4 (extensão opcional do tutorial).
@@ -149,7 +189,8 @@
    ;; Os componentes agora se viram sozinhos!
    [todo-form]
    [api-status]
-   [todo-list]])
+   [todo-list]
+   [todo-filters]])
 
 ;; --- 2. A Inicialização ---
 (defn ^:export init []

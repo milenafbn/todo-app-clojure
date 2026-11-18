@@ -2,7 +2,7 @@
 
 **Alunas:** Ana Iara Loayza e Milena Neves
 
-**Vídeo de apresentação:** _(link)_
+**Vídeo de apresentação: https://youtu.be/LUezJV80_x8
 
 **Tutorial original:** [Tutorial Clojure/ClojureScript: Construindo uma Aplicação
 Persistente e Reativa](https://lambdageo-edu.github.io/lambdageo-tutorials/clojure/)

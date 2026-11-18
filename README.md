@@ -23,6 +23,16 @@ incremental para estudar a arquitetura de aplicações funcionais modernas:
   [Shadow-CLJS](https://github.com/thheller/shadow-cljs), consumindo a API
   via `fetch`.
 
+## Captura de Tela
+
+![Interface da aplicação Todo List](docs/screenshot.png)
+
+> **Observação:** durante a gravação do vídeo de apresentação, as cores da
+> tela ficaram muito vibrantes e claras, dando a impressão de que o fundo da
+> página é totalmente branco. Na verdade, a interface tem um fundo lilás
+> claro com um padrão pontilhado, e o cartão central é branco, como mostra a
+> imagem acima, que representa o visual real da aplicação.
+
 ## Pré-requisitos
 
 | Ferramenta                                                        | Versão mínima |
